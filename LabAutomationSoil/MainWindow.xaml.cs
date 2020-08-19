@@ -22,6 +22,7 @@ using Microsoft.CSharp;
 using System.CodeDom.Compiler;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using NPOI.XSSF.UserModel;
 
 namespace LabAutomationSoil
 {
@@ -82,9 +83,6 @@ namespace LabAutomationSoil
 			topScrollViewer.Drop += scDrop;
 			mainScrollViewer.DragEnter += scDragEnter;
 			mainScrollViewer.Drop += scDrop;
-			samplingquantityLabel.Tag = 0;
-			dilutionratioLabel.Tag = 1;
-			constantvolumeLabel.Tag = 2;
 		}
 
 		/// <summary>
@@ -113,7 +111,7 @@ namespace LabAutomationSoil
 				else if (int.Parse(scrollViewer.Tag.ToString()) == 1)
 				{
 					//创建数据结构
-					CreateTxt(paths[0]);
+					CreateExcel(paths[0]);
 				}
 			}
 			e.Handled = true;
@@ -134,51 +132,7 @@ namespace LabAutomationSoil
 					//加载常规设置项
 					string key = data.Split(symbol)[0];
 					string value = data.Split(symbol)[1];
-					if ((key + symbol) == samplingquantityLabel.Content.ToString())
-					{
-						string strTextBox = Regex.Replace(value,"[a-z]","",RegexOptions.IgnoreCase);
-						string strComboBox = value.Replace(strTextBox,string.Empty);
-						samplingquantityTextBox.Text = strTextBox;
-						foreach (ComboBoxItem comboBoxItem in samplingquantityComboBox.Items)
-						{
-							if (strComboBox == comboBoxItem.Content.ToString())
-							{
-								comboBoxItem.IsSelected = true;
-							}
-						}
-					}
-					else if ((key + symbol) == dilutionratioLabel.Content.ToString())
-					{
-						dilutionratioTextBox.Text = value;
-					}
-					else if ((key + symbol) == constantvolumeLabel.Content.ToString())
-					{
-						string strTextBox = Regex.Replace(value,"[a-z]","",RegexOptions.IgnoreCase);
-						string strComboBox = value.Replace(strTextBox,string.Empty);
-						constantvolumeTextBox.Text = strTextBox;
-						foreach (ComboBoxItem comboBoxItem in constantvolumeComboBox.Items)
-						{
-							if (strComboBox == comboBoxItem.Content.ToString())
-							{
-								comboBoxItem.IsSelected = true;
-							}
-						}
-					}
-					else if ((key + symbol) == coefficientLabel.Content.ToString())
-					{
-						coefficientTextBox.Text = value;
-					}
-					else if ((key + symbol) == TargetCompanyLabel.Content.ToString())
-					{
-						foreach (ComboBoxItem comboBoxItem in TargetCompanyComboBox.Items)
-						{
-							if (value == comboBoxItem.Content.ToString())
-							{
-								comboBoxItem.IsSelected = true;
-							}
-						}
-					}
-					else if ((key + symbol) == AccuracyLabel.Content.ToString())
+					if ((key + symbol) == AccuracyLabel.Content.ToString())
 					{
 						foreach (ComboBoxItem comboBoxItem in AccuracyComboBox.Items)
 						{
@@ -191,28 +145,6 @@ namespace LabAutomationSoil
 					else if ((key + symbol) == FormulaLabel.Content.ToString())
 					{
 						foreach (ComboBoxItem comboBoxItem in FormulaComboBox.Items)
-						{
-							if (value == comboBoxItem.Content.ToString())
-							{
-								comboBoxItem.IsSelected = true;
-							}
-						}
-					}
-					else if (key == testZDRadioButton.Content.ToString())
-					{
-						testZDRadioButton.IsChecked = true;
-						foreach (ComboBoxItem comboBoxItem in ZDJCCompanyComboBox.Items)
-						{
-							if (value == comboBoxItem.Content.ToString())
-							{
-								comboBoxItem.IsSelected = true;
-							}
-						}
-					}
-					else if (key == testJCRadioButton.Content.ToString())
-					{
-						testJCRadioButton.IsChecked = true;
-						foreach (ComboBoxItem comboBoxItem in ZDJCCompanyComboBox.Items)
 						{
 							if (value == comboBoxItem.Content.ToString())
 							{
@@ -251,42 +183,55 @@ namespace LabAutomationSoil
 		/// 通过文本创造核心内容
 		/// </summary>
 		/// <param name="path"></param>
-		private void CreateTxt(string path)
+		private void CreateExcel(string path)
 		{
 			AllClear();
+			IWorkbook workbook = null;
+			TabControl tabControl = new TabControl();
+			tabControl.Name = "tabControl";
+			List<KeyValuePair<string,int>> compounds = new List<KeyValuePair<string,int>>();
 			if (File.Exists(path))
 			{
-				List<string> alldata = File.ReadAllLines(path,Encoding.UTF8).ToList();
-				List<string> data = new List<string>();
-				TabControl tabControl = new TabControl();
-				tabControl.Name = "tabControl";
-				for (int i = 0; i < alldata.Count; i++)
+				using (FileStream fs = File.OpenRead(path))
 				{
-					//""为txt文档的分页符
-					if (alldata[i] != "")
+					// 2007版本
+					if (path.Contains(".xlsx"))
 					{
-						data.Add(alldata[i]);
+						workbook = new XSSFWorkbook(fs);
 					}
-					else
+					// 2003版本
+					else if (path.Contains(".xls"))
 					{
-						List<string> adddata = data.ToList();
-						txtList.Add(adddata);
-						data.Clear();
+						workbook = new HSSFWorkbook(fs);
 					}
-				}
+					if (workbook != null)
+					{
+						ISheet sheet = workbook.GetSheetAt(0);//读取第一个sheet，当然也可以循环读取每个sheet
+						IRow firstrow = sheet.GetRow(sheet.FirstRowNum);
+						//第一行是啊化合物名称
+						int columnCount = firstrow.LastCellNum;//多少列
+						for (int j = 0; j < columnCount; j++)
+						{
+							ICell firstCell = firstrow.GetCell(j);
+							if (firstCell != null)
+							{
+								if (firstCell.StringCellValue != string.Empty && firstCell.StringCellValue != "" && !firstCell.StringCellValue.Contains("S"))
+								{
+									KeyValuePair<string,int> keyValuePair = new KeyValuePair<string,int>(firstCell.StringCellValue,firstCell.ColumnIndex);
+									compounds.Add(keyValuePair);
+								}
+							}
+						}
+						foreach (KeyValuePair<string,int> keyValuePair in compounds)
+						{
+							CreateDataTable(tabControl,sheet,keyValuePair.Key,keyValuePair.Value);
+						}
+					}
+					AddParallelSamplesToList();
 
-				foreach (List<string> vs in txtList)
-				{
-					bool isOK = CreateDataTable(tabControl,vs,txtList.IndexOf(vs));
-					if (!isOK)
-					{
-						return;
-					}
+					maingrid.Children.Add(tabControl);
+					ReportNoLabel.Content = ReportNo;
 				}
-				AddParallelSamplesToList();
-
-				maingrid.Children.Add(tabControl);
-				ReportNoLabel.Content = ReportNo;
 			}
 		}
 
@@ -307,106 +252,48 @@ namespace LabAutomationSoil
 			finalsampleNameList.Clear();
 		}
 
-		private bool CreateDataTable(TabControl tabControl,List<string> vs,int vsNum)
+		private void CreateDataTable(TabControl tabControl,ISheet sheet,string compoundsName,int compoundsNum)
 		{
-			//前三列是datatable的属性名和表头需要单独保存
-			//string[] id = vs[0].Split("\t");
-			sampleNameList.Clear();
-			string[] name = vs[1].Split("\t");
-
-			////缺少自我填写的最低检测质量浓度
-			//if (name.Length < 3)
-			//{
-			//	MessageBox.Show(name[1] + "缺少最低检测质量浓度或检出限，请补充填写！");
-			//	return false;
-			//}
-			//KeyValuePair<string,string> keyValuePair = new KeyValuePair<string,string>(name[1],name[2]);
-
-
-			List<string> tablehead = vs[2].Split("\t").ToList();
-			DataTable datatable = new DataTable();
-			datatable.TableName = name[1];
-			for (int i = 0; i < tablehead.Count; i++)
+			int rowCount = sheet.LastRowNum;//总行数
+			int columnCount = 0;
+			DataTable dataTable = new DataTable();
+			dataTable.TableName = compoundsName;
+			for (int i = sheet.FirstRowNum; i < rowCount; i++)
 			{
-				string headname = string.IsNullOrEmpty(tablehead[i]) ? "编号" : tablehead[i];
-				datatable.Columns.Add(headname);
-			}
-			for (int j = 3; j < vs.Count; j++)
-			{
-				DataRow dr = datatable.NewRow();
-				dr.ItemArray = vs[j].Split("\t");
-				datatable.Rows.Add(dr);
-			}
-			//提取委托单号,删除后缀.gcd以及BQ的行
-			for (int k = datatable.Rows.Count - 1; k >= 0; k--)
-			{
-				string oldname = datatable.Rows[k]["数据文件名"].ToString();
-				//
-				if (oldname.Contains("BQ"))
+				IRow row = sheet.GetRow(i);
+				//第二行都是表头，要组成datatable
+				if (i == 1)
 				{
-					datatable.Rows[k].Delete();
-				}
-				else
-				{
-					string[] newname = oldname.Replace(".gcd","").Split(" ");
-
-					if (sampleNameList.Count != datatable.Rows.Count)
+					for (int j = 0; j < 8; j++)
 					{
-						if (newname.Length > 1)
+						ICell secondCell = row.GetCell(j);
+						if (secondCell != null)
 						{
-							ReportNo = (ReportNo == string.Empty) ? newname[0] : ReportNo;
-							sampleNameList.Insert(0,newname[1]);
-							datatable.Rows[k]["数据文件名"] = newname[1];
-						}
-						else
-						{
-							datatable.Rows[k]["数据文件名"] = newname[0];
-							sampleNameList.Insert(0,newname[0]);
+							if (secondCell.StringCellValue != string.Empty && secondCell.StringCellValue != "")
+							{
+								dataTable.Columns.Add(secondCell.StringCellValue);
+							}
 						}
 					}
+					dataTable.Columns.Add("含量");
 				}
-			}
-			datatable.AcceptChanges();
-			//根据有机组要求只要三列
-			DataTable newdatatable = new DataTable();
-			newdatatable.TableName = datatable.TableName;
-			//for (int l = 0; l < datatable.Columns.Count; l++)
-			//{
-			//	if (datatable.Columns[l].ColumnName == "编号" || datatable.Columns[l].ColumnName == "数据文件名" || datatable.Columns[l].ColumnName == "浓度")
-			//	{
-			//		DataColumn dataColumn = datatable.Columns[l];
-			//		newdatatable.Columns.Add(dataColumn.ColumnName,dataColumn.DataType);
-			//	}
-			//}
-			newdatatable.Columns.Add("编号");
-			newdatatable.Columns.Add("数据文件名");
-			newdatatable.Columns.Add("浓度");
-
-			for (int i = 0; i < datatable.Rows.Count; i++)
-			{
-				DataRow dr = newdatatable.NewRow();
-				for (int j = 0; j < newdatatable.Columns.Count; j++)
+				//第三行开始是数据
+				else
 				{
-					string newColumnName = newdatatable.Columns[j].ColumnName;
-					dr[newColumnName] = datatable.Rows[i][newColumnName];
+					DataRow dataRow = dataTable.NewRow();
+					for (int k = 0; k < dataRow.ItemArray.Length - 1; k++)
+					{
+						ICell cell = row.GetCell(k);
+						if (cell != null)
+						{
+							dataRow[k] = cell.StringCellValue;
+						}
+					}
+					ICell newCell = row.GetCell(compoundsNum);
+					dataRow[dataRow.ItemArray.Length - 1] = newCell.StringCellValue;
+					dataTable.Rows.Add(dataRow);
 				}
-				newdatatable.Rows.Add(dr);
 			}
-
-			TabItem tabItem = new TabItem();
-			//tabItem.Header = name[1] + " | " + name[2];
-			StackPanel stackPanel = CreateStackPanel(name[1],vsNum);
-			tabItem.Header = stackPanel;
-			DataGrid dg = new DataGrid();
-			dg.Name = "dataGrid";
-			dg.ItemsSource = newdatatable.DefaultView;
-			dg.CanUserSortColumns = true;
-			dg.CanUserReorderColumns = true;
-			tabItem.Content = dg;
-			tabControl.Items.Add(tabItem);
-			compoundsDataSet.Tables.Add(newdatatable);
-
-			return true;
 		}
 
 		/// <summary>
@@ -694,36 +581,18 @@ namespace LabAutomationSoil
 							CellRangeAddress region = new CellRangeAddress(i,8,horizontalSheetColumnCount - 2,horizontalSheetColumnCount - 1);
 							sheet.AddMergedRegion(region);
 							//要和公式那一块绑定在一起
-							double k = double.Parse(coefficientTextBox.Text);
-							if (k != 1)
+
+							StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + "\n");
+							stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
+							//测定浓度要根据她自己填的
+							stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
+							if (FormulaComboBox.Text.Contains("V1"))
 							{
-								StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + " × k" + "\n");
-								stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
-								//测定浓度要根据她自己填的
-								stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
-								if (FormulaComboBox.Text.Contains("V1"))
-								{
-									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
-								}
-								stringBuilder.Append("f——稀释倍数\n");
-								stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
-								stringBuilder.Append("k——系数(" + coefficientTextBox.Text + ")\n");
-								formulacell.SetCellValue(stringBuilder.ToString());
+								stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 							}
-							else
-							{
-								StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + "\n");
-								stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
-								//测定浓度要根据她自己填的
-								stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
-								if (FormulaComboBox.Text.Contains("V1"))
-								{
-									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
-								}
-								stringBuilder.Append("f——稀释倍数\n");
-								stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
-								formulacell.SetCellValue(stringBuilder.ToString());
-							}
+							stringBuilder.Append("f——稀释倍数\n");
+							stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+							formulacell.SetCellValue(stringBuilder.ToString());
 							break;
 						}
 					case 5:
@@ -812,14 +681,7 @@ namespace LabAutomationSoil
 					}
 					else if (i == 11 && j == 6)
 					{
-						if (testZDRadioButton.IsChecked == true)
-						{
-							cell.SetCellValue(testZDRadioButton.Content + "(" + ZDJCCompanyComboBox.Text + ")");
-						}
-						else if (testJCRadioButton.IsChecked == true)
-						{
-							cell.SetCellValue(testJCRadioButton.Content + "(" + ZDJCCompanyComboBox.Text + ")");
-						}
+						cell.SetCellValue(testJCRadioButton.Content + "(" + ZDJCCompanyComboBox.Text + ")");
 						CellRangeAddress outregion = new CellRangeAddress(formalrow.RowNum,formalrow.RowNum,j,horizontalSheetColumnCount - 1);
 						sheet.AddMergedRegion(outregion);
 					}
@@ -995,7 +857,7 @@ namespace LabAutomationSoil
 					{
 						cell.SetCellValue(sampleName);
 					}
-					else if (i == 1 && Count == 4)
+					/*else if (i == 1 && Count == 4)
 					{
 						string setvalue = (sampleName == "以下空白") ? string.Empty : samplingquantityTextBox.Text;
 						cell.SetCellValue(setvalue);
@@ -1009,7 +871,7 @@ namespace LabAutomationSoil
 					{
 						string setvalue = (sampleName == "以下空白") ? string.Empty : constantvolumeTextBox.Text;
 						cell.SetCellValue(setvalue);
-					}
+					}*/
 					else if (i == Count)
 					{
 
@@ -1097,36 +959,17 @@ namespace LabAutomationSoil
 					CellRangeAddress region = new CellRangeAddress(0,3,verticalSheetColumnCount * Count,verticalSheetColumnCount * Count);
 					sheet.AddMergedRegion(region);
 					//要和公式那一块绑定在一起
-					double k = double.Parse(coefficientTextBox.Text);
-					if (k != 1)
+					StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + "\n");
+					stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
+					//测定浓度要根据她自己填的
+					stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
+					if (FormulaComboBox.Text.Contains("V1"))
 					{
-						StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + " × k" + "\n");
-						stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
-						//测定浓度要根据她自己填的
-						stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
-						if (FormulaComboBox.Text.Contains("V1"))
-						{
-							stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
-						}
-						stringBuilder.Append("f——稀释倍数\n");
-						stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
-						stringBuilder.Append("k——系数(" + coefficientTextBox.Text + ")\n");
-						formulacell.SetCellValue(stringBuilder.ToString());
+						stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 					}
-					else
-					{
-						StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + "\n");
-						stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
-						//测定浓度要根据她自己填的
-						stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
-						if (FormulaComboBox.Text.Contains("V1"))
-						{
-							stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
-						}
-						stringBuilder.Append("f——稀释倍数\n");
-						stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
-						formulacell.SetCellValue(stringBuilder.ToString());
-					}
+					stringBuilder.Append("f——稀释倍数\n");
+					stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+					formulacell.SetCellValue(stringBuilder.ToString());
 				}
 				//从第二列开始
 				for (int j = verticalSheetColumnCount * Count + 1; j < verticalSheetColumnCount * Count + verticalSheetColumnCount; j++)
@@ -1145,7 +988,7 @@ namespace LabAutomationSoil
 						string setvalue = (i == 0) ? "以下空白" : "";
 						cell.SetCellValue(setvalue);
 					}
-					else if (i == (int)samplingquantityLabel.Tag)
+					/*else if (i == (int)samplingquantityLabel.Tag)
 					{
 						//常数
 						if ((j - verticalSheetColumnCount * Count) == 1)
@@ -1243,7 +1086,7 @@ namespace LabAutomationSoil
 						{
 							cell.SetCellValue(dilutionratioTextBox.Text);
 						}
-					}
+					}*/
 					//第四行
 					else if ((j - verticalSheetColumnCount * Count) == 1)
 					{
@@ -1294,14 +1137,7 @@ namespace LabAutomationSoil
 				}
 				else if (k == 1 + verticalSheetColumnCount * Count)
 				{
-					if (testZDRadioButton.IsChecked == true)
-					{
-						cell.SetCellValue(testZDRadioButton.Content + "(" + ZDJCCompanyComboBox.Text + ")");
-					}
-					else if (testJCRadioButton.IsChecked == true)
-					{
-						cell.SetCellValue(testJCRadioButton.Content + "(" + ZDJCCompanyComboBox.Text + ")");
-					}
+					cell.SetCellValue(testJCRadioButton.Content + "(" + ZDJCCompanyComboBox.Text + ")");
 				}
 				else if (k == 2 + verticalSheetColumnCount * Count)
 				{
@@ -1480,7 +1316,7 @@ namespace LabAutomationSoil
 			double V = double.NaN;
 			//系数k
 			double k = double.NaN;
-			if (Regex.IsMatch(dilutionratioTextBox.Text,"^([0-9]{1,}[.][0-9]*)$"))
+			/*if (Regex.IsMatch(dilutionratioTextBox.Text,"^([0-9]{1,}[.][0-9]*)$"))
 			{
 				f = double.Parse(dilutionratioTextBox.Text);
 			}
@@ -1495,7 +1331,7 @@ namespace LabAutomationSoil
 			if (Regex.IsMatch(coefficientTextBox.Text,"^([0-9]{1,}[.][0-9]*)$"))
 			{
 				k = double.Parse(coefficientTextBox.Text);
-			}
+			}*/
 			//目标物上机测定浓度
 			double Ci;
 			double C1 = double.NaN;
@@ -1583,7 +1419,7 @@ namespace LabAutomationSoil
 			double V = double.NaN;
 			//系数k
 			double k = double.NaN;
-			if (Regex.IsMatch(dilutionratioTextBox.Text,"^([0-9]{1,}[.][0-9]*)$"))
+			/*if (Regex.IsMatch(dilutionratioTextBox.Text,"^([0-9]{1,}[.][0-9]*)$"))
 			{
 				f = double.Parse(dilutionratioTextBox.Text);
 			}
@@ -1598,7 +1434,7 @@ namespace LabAutomationSoil
 			if (Regex.IsMatch(coefficientTextBox.Text,"^([0-9]{1,}[.][0-9]*)$"))
 			{
 				k = double.Parse(coefficientTextBox.Text);
-			}
+			}*/
 
 			//目标物上机测定浓度
 			double Ci;
@@ -1671,14 +1507,7 @@ namespace LabAutomationSoil
 				}
 			}
 
-			if (testZDRadioButton.IsChecked == true)
-			{
-				return "<" + modelC;
-			}
-			else
-			{
-				return "ND";
-			}
+			return "ND";
 		}
 
 		private HSSFCellStyle CreateStyle(HSSFWorkbook workbook)
@@ -1828,21 +1657,13 @@ namespace LabAutomationSoil
 				{
 					StreamWriter streamWriter = new StreamWriter(stream);
 					//streamWriter.WriteLine(strReportNoLabel.Content + ReportNo);
-					streamWriter.WriteLine(samplingquantityLabel.Content + samplingquantityTextBox.Text + samplingquantityComboBox.Text);
-					streamWriter.WriteLine(dilutionratioLabel.Content + dilutionratioTextBox.Text);
-					streamWriter.WriteLine(constantvolumeLabel.Content + constantvolumeTextBox.Text + constantvolumeComboBox.Text);
-					streamWriter.WriteLine(coefficientLabel.Content + coefficientTextBox.Text);
+					streamWriter.WriteLine(samplingquantityLabel.Content + samplingquantityComboBox.Text);
+					streamWriter.WriteLine(constantvolumeLabel.Content + constantvolumeComboBox.Text);
 					streamWriter.WriteLine(TargetCompanyLabel.Content + TargetCompanyComboBox.Text);
 					streamWriter.WriteLine(AccuracyLabel.Content + AccuracyComboBox.Text);
 					streamWriter.WriteLine(FormulaLabel.Content + FormulaComboBox.Text);
-					if (testZDRadioButton.IsChecked == true)
-					{
-						streamWriter.WriteLine(testZDRadioButton.Content + "：" + ZDJCCompanyComboBox.Text);
-					}
-					else if (testJCRadioButton.IsChecked == true)
-					{
-						streamWriter.WriteLine(testJCRadioButton.Content + "：" + ZDJCCompanyComboBox.Text);
-					}
+					streamWriter.WriteLine(testJCRadioButton.Content + "：" + ZDJCCompanyComboBox.Text);
+					
 					foreach (KeyValuePair<string,string> keyValuePair in compoundsNameList)
 					{
 						streamWriter.WriteLine(keyValuePair.Key + "：" + keyValuePair.Value);
