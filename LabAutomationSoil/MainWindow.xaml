@@ -31,18 +31,18 @@
                             <Label HorizontalAlignment="Left" VerticalContentAlignment="Center" Name="ReportNoLabel"></Label>
                         </StackPanel>
                         <StackPanel Margin="5,0,5,0" Orientation="Horizontal" Grid.Column="1">
-                            <Label Name="samplingquantityLabel" Content="取样量V：" VerticalAlignment="Center" HorizontalAlignment="Left"></Label>
+                            <Label Name="samplingquantityLabel" Content="取样量m：" VerticalAlignment="Center" HorizontalAlignment="Left"></Label>
                             <!--<TextBox Name="samplingquantityTextBox" Width="50" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextChanged="TextBox_TextChanged">1.0</TextBox>-->
                             <ComboBox VerticalAlignment="Center" MinWidth="50" Name="samplingquantityComboBox">
-                                <ComboBoxItem Tag="0.001" Content="mL" IsSelected="True"></ComboBoxItem>
-                                <ComboBoxItem Tag="1" Content="L"></ComboBoxItem>
-                                <ComboBoxItem Tag="0.000001" Content="μL"></ComboBoxItem>
+                                <ComboBoxItem Tag="0.000001" Content="mg" IsSelected="True"></ComboBoxItem>
+                                <ComboBoxItem Tag="0.001" Content="g"></ComboBoxItem>
+                                <ComboBoxItem Tag="1" Content="kg"></ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
-                        <!--<StackPanel Margin="5,0,5,0" Orientation="Horizontal" Grid.Column="2">
+                        <StackPanel Margin="5,0,5,0" Orientation="Horizontal" Grid.Column="2">
                             <Label Name="dilutionratioLabel" Content="稀释倍数f：" VerticalAlignment="Center" HorizontalAlignment="Left"></Label>
-                            <TextBox Name="dilutionratioTextBox" Width="50" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextChanged="TextBox_TextChanged">1.0</TextBox>
-                        </StackPanel>-->
+                            <!--<TextBox Name="dilutionratioTextBox" Width="50" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextChanged="TextBox_TextChanged">1.0</TextBox>-->
+                        </StackPanel>
                         <StackPanel Margin="5,0,5,0" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                             <Label Name="constantvolumeLabel" Content="定容体积V1：" VerticalAlignment="Center" HorizontalAlignment="Left"></Label>
                             <!--<TextBox  Name="constantvolumeTextBox" Width="50" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextChanged="TextBox_TextChanged">1.0</TextBox>-->
@@ -52,10 +52,10 @@
                                 <ComboBoxItem Tag="0.000001" Content="μL"></ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
-                        <!--<StackPanel Margin="5,0,5,0" Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Label Name="coefficientLabel" Content="系数k：" Margin="10,0,10,0" VerticalContentAlignment="Center"></Label>
-                            <TextBox Name="coefficientTextBox" Width="50" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextChanged="TextBox_TextChanged">1.0</TextBox>
-                        </StackPanel>-->
+                        <StackPanel Margin="5,0,5,0" Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Label Name="LDMCLabel" Content="干物质含量Wdm(%)" Margin="10,0,10,0" VerticalContentAlignment="Center"></Label>
+                            <!--<TextBox Name="coefficientTextBox" Width="50" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextChanged="TextBox_TextChanged">1.0</TextBox>-->
+                        </StackPanel>
                         <StackPanel Margin="5,0,5,0" Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button FontSize="16" HorizontalAlignment="Center" Name="importExcel" Click="importExcel_Click" MouseMove="importExcel_MouseMove">导出Excel</Button>
                         </StackPanel>
@@ -105,17 +105,17 @@
 
                         <Label Name="FormulaLabel" Content="公式：" Margin="10,0,10,0" VerticalContentAlignment="Center"></Label>
                         <ComboBox VerticalAlignment="Center" MinWidth="50" Name="FormulaComboBox">
-                            <ComboBoxItem Content="C = Ci × f × V1 / V" IsSelected="True"></ComboBoxItem>
-                            <ComboBoxItem Content="C = Ci × f / V"></ComboBoxItem>
+                            <ComboBoxItem Content="C = Ci × f × V1 / (m × Wdm)" IsSelected="True"></ComboBoxItem>
+                            <!--<ComboBoxItem Content="C = Ci × f / V"></ComboBoxItem>-->
                             <!--<ComboBoxItem Content="X = Ci * f * (V1 / V) * (1/1000)"></ComboBoxItem>-->
                         </ComboBox>
                         <!--<RadioButton Name="testZDRadioButton" Margin="10,0,10,0" IsChecked="True" HorizontalAlignment="Center" VerticalAlignment="Center">最低检测质量浓度</RadioButton>-->
                         <RadioButton Margin="10,0,10,0" IsChecked="True" Name="testJCRadioButton" HorizontalAlignment="Center" VerticalAlignment="Center">检出限</RadioButton>
                         <Label Content="单位：" HorizontalAlignment="Center" VerticalContentAlignment="Center"></Label>
                         <ComboBox HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="50" Name="ZDJCCompanyComboBox">
-                            <ComboBoxItem Tag="1" Content="mg/L" IsSelected="True"></ComboBoxItem>
-                            <ComboBoxItem Tag="0.001"  Content="ng/L"></ComboBoxItem>
-                            <ComboBoxItem Tag="0.000001" Content="μg/L"></ComboBoxItem>
+                            <ComboBoxItem Tag="1" Content="mg/kg" IsSelected="True"></ComboBoxItem>
+                            <ComboBoxItem Tag="0.001"  Content="ng/g"></ComboBoxItem>
+                            <ComboBoxItem Tag="0.000001" Content="μg/mg"></ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
                     <Grid Grid.Row="1" Name="maingrid">
