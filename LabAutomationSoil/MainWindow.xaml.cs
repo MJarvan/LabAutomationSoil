@@ -1019,10 +1019,12 @@ namespace LabAutomationSoil
                 {
                     if (basicDataTable.Rows[i][basicDataTable.Columns.Count - 1].ToString() == sampleName)
                     {
-                        m = basicDataTable.Rows[i][0].ToString();
+                        m = !basicDataTable.Rows[i][0].ToString().Contains("-") ? CalculateAccuracyCTwo(basicDataTable.Rows[i][0].ToString()) : basicDataTable.Rows[i][0].ToString();
+                        //m = basicDataTable.Rows[i][0].ToString();
                         f = basicDataTable.Rows[i][1].ToString();
                         Wdm = basicDataTable.Rows[i][2].ToString();
-                        V1 = basicDataTable.Rows[i][3].ToString();
+                        //V1 = basicDataTable.Rows[i][3].ToString();
+                        V1 = !basicDataTable.Rows[i][3].ToString().Contains("-") ? CalculateAccuracyCTwo(basicDataTable.Rows[i][3].ToString()) : basicDataTable.Rows[i][3].ToString();
                     }
                 }
                 for (int i = 0; i < horizontalSheetColumnCount; i++)
@@ -1225,7 +1227,12 @@ namespace LabAutomationSoil
                         }
                         else
                         {
-                            cell.SetCellValue(basicDataTable.Rows[j - (Count + 1) * (importTakeNum + 2)][i].ToString());
+                            string setvalue = basicDataTable.Rows[j - (Count + 1) * (importTakeNum + 2)][i].ToString();
+                            if ((i == 0 || i == 3) && !setvalue.Contains("-"))
+                            {
+                                setvalue = CalculateAccuracyCTwo(setvalue);
+                            }
+                            cell.SetCellValue(setvalue);
                         }
                     }
                 }
