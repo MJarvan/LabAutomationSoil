@@ -82,8 +82,8 @@
                         <Label Name="TargetCompanyLabel" Content="目标物上机测定浓度单位：" Margin="10,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"></Label>
                         <ComboBox HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="50" Name="TargetCompanyComboBox">
                             <ComboBoxItem Tag="1" Content="mg/L" IsSelected="True"></ComboBoxItem>
-                            <ComboBoxItem Tag="0.001"  Content="ng/L"></ComboBoxItem>
-                            <ComboBoxItem Tag="0.000001" Content="μg/L"></ComboBoxItem>
+                            <ComboBoxItem Tag="0.001"  Content="μg/L"></ComboBoxItem>
+                            <ComboBoxItem Tag="0.000001" Content="ng/L"></ComboBoxItem>
                         </ComboBox>
                         <Label Name="AccuracyLabel" Content="计算精度：" Margin="10,0,10,0" VerticalContentAlignment="Center"></Label>
                         <ComboBox VerticalAlignment="Center" MinWidth="50" Name="AccuracyComboBox">
@@ -111,7 +111,7 @@
                         <Label Content="单位：" HorizontalAlignment="Center" VerticalContentAlignment="Center"></Label>
                         <ComboBox HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="50" Name="ZDJCCompanyComboBox">
                             <ComboBoxItem Tag="1" Content="mg/kg" IsSelected="True"></ComboBoxItem>
-                            <ComboBoxItem Tag="0.000001" Content="μg/kg"></ComboBoxItem>
+                            <ComboBoxItem Tag="0.001" Content="μg/kg"></ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
                     <Grid Grid.Row="1" Name="maingrid">

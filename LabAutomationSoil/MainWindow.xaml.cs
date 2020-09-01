@@ -470,6 +470,7 @@ namespace LabAutomationSoil
             textBox.Width = 50;
             textBox.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
             textBox.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+			textBox.KeyUp += Tab_TextBox_KeyUp;
             if (preCompoundsNameList.Count > 0)
 
             {
@@ -487,6 +488,44 @@ namespace LabAutomationSoil
             stackPanel.Children.Add(textBox);
 
             return stackPanel;
+        }
+
+        /// <summary>
+        /// enter切换检出限
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Tab_TextBox_KeyUp(object sender,KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                TextBox textbox = sender as TextBox;
+                StackPanel stackPanel = textbox.Parent as StackPanel;
+                TabItem tabItem = stackPanel.Parent as TabItem;
+                TabControl tabControl = tabItem.Parent as TabControl;
+                int tabNum = tabControl.Items.IndexOf(tabItem);
+                //到达最大值
+                TabItem nextTabItem;
+                if (tabNum == tabControl.Items.Count - 1)
+                {
+                    nextTabItem = tabControl.Items[0] as TabItem;
+                }
+                else
+                {
+                    nextTabItem = tabControl.Items[tabNum + 1] as TabItem;
+                }
+                StackPanel nextStackPanel = nextTabItem.Header as StackPanel;
+                foreach (var item in nextStackPanel.Children)
+                {
+                    if (item.GetType() == typeof(TextBox))
+                    {
+                        TextBox nextTextBox = item as TextBox;
+                        Keyboard.Focus(nextTextBox);
+                        nextTextBox.Focus();
+                    }
+                }
+
+            }
         }
 
         /// <summary>
