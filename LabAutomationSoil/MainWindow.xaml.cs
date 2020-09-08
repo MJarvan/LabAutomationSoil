@@ -273,7 +273,7 @@ namespace LabAutomationSoil
                         }
                         //构造basicdatatable
                         basicDataTable.TableName = "基本属性";
-                        for (int i = 1; i < sheet.LastRowNum; i++)
+                        for (int i = 1; i <= sheet.LastRowNum; i++)
                         {
                             DataRow dr = basicDataTable.NewRow();
                             IRow row = sheet.GetRow(i);
@@ -353,7 +353,7 @@ namespace LabAutomationSoil
             int rowCount = sheet.LastRowNum;//总行数
             DataTable dataTable = new DataTable();
             dataTable.TableName = compoundsName;
-            for (int i = 1; i < rowCount; i++)
+            for (int i = 1; i <= rowCount; i++)
             {
                 IRow row = sheet.GetRow(i);
                 //由于Excel在非数据区进行了格式设置，那么sheet.LastRowNum 得到的值就会与实际得到的值不符。从而因有非空验证，造成导入失败。
@@ -790,8 +790,8 @@ namespace LabAutomationSoil
                             HSSFRichTextString rtsWdm = new HSSFRichTextString(wdm);
                             var cellStyleFont = (HSSFFont)workbook.CreateFont(); //创建字体
                             cellStyleFont.TypeOffset = FontSuperScript.Sub;//字体上标下标
-                            rtsWdm.ApplyFont(wdm.Length - 13,wdm.Length - 11,cellStyleFont);
-                            rtsWdm.ApplyFont(29,31,cellStyleFont);
+                            rtsWdm.ApplyFont(wdm.Length - 10,wdm.Length - 8,cellStyleFont);
+                            rtsWdm.ApplyFont(19,21,cellStyleFont);
                             formulacell.SetCellValue(rtsWdm);
                             break;
                         }
@@ -1204,18 +1204,18 @@ namespace LabAutomationSoil
                     //要和公式那一块绑定在一起
                     //下标只能用Excel自带的富文本编写，不能用stringbuilder
                     string wdm = "计算公式：" + FormulaComboBox.Text + "\n"
-                        + "C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n"
-                        + "Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n"
-                        + "V1——定容体积(" + constantvolumeComboBox.Text + ")\n"
+                        + "C—样品中目标物的质量浓度\n"
+                        + "Ci——目标物上机测定浓度\n"
+                        + "V1——定容体积\n"
                         + "f——稀释倍数\n"
-                        + "m——取样量(" + samplingquantityComboBox.Text + ")\n"
-                        + "Wdm—样品干物质含量——%";
+                        + "m——取样量\n"
+                        + "Wdm—样品干物质含量";
                     HSSFRichTextString rtsWdm = new HSSFRichTextString(wdm);
                     IWorkbook workbook = sheet.Workbook;
                     var cellStyleFont = (HSSFFont)workbook.CreateFont(); //创建字体
                     cellStyleFont.TypeOffset = FontSuperScript.Sub;//字体上标下标
-                    rtsWdm.ApplyFont(wdm.Length - 13,wdm.Length - 11,cellStyleFont);
-                    rtsWdm.ApplyFont(29,31,cellStyleFont);
+                    rtsWdm.ApplyFont(wdm.Length - 10,wdm.Length - 8,cellStyleFont);
+                    rtsWdm.ApplyFont(19,21,cellStyleFont);
                     formulacell.SetCellValue(rtsWdm);
                 }
                 //从第二列开始
@@ -1270,6 +1270,10 @@ namespace LabAutomationSoil
                             if ((i == 0 || i == 3) && !setvalue.Contains("-"))
                             {
                                 setvalue = CalculateAccuracyCTwo(setvalue);
+                            }
+                            else if (i == 2 && !setvalue.Contains("-") && setvalue != "100")
+                            {
+                                setvalue = CalculateAccuracySu(double.Parse(setvalue));
                             }
                             cell.SetCellValue(setvalue);
                         }
@@ -1479,6 +1483,41 @@ namespace LabAutomationSoil
             }
         }
 
+        private string CalculateAccuracySu(double c)
+        {
+            string newC = c.ToString();
+            string[] strC = newC.Split(".");
+            //有小数点
+            if (strC.Length > 1)
+            {
+                string leftC = strC[0];
+                string rightC = strC[1];
+                if (leftC.Length > 3)
+                {
+                    return leftC;
+                }
+                else
+                {
+                    newC = Math.Round(c,3 - leftC.Length).ToString();
+                }
+            }
+            //计算完毕都需要补零
+            if (newC.Length < 4 && newC.Contains("."))
+            {
+                newC += "0";
+            }
+            else if (newC.Length < 4 && !newC.Contains("."))
+            {
+                newC += ".";
+                int lenC = newC.Length;
+                for (int i = 0; i < 4 - lenC; i++)
+                {
+                    newC += "0";
+                }
+            }
+
+            return newC;
+        }
 
         /// <summary>
         /// 科学计数法
